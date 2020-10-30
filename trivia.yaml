@@ -1,0 +1,32 @@
+# hello-kubernetes.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: trivia
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: trivia
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivia
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: trivia
+  template:
+    metadata:
+      labels:
+        app: trivia
+    spec:
+      containers:
+      - name: trivia
+        image: triviacontainerregistry.azurecr.io/myimage:v3
+        ports:
+        - containerPort: 8080
