@@ -1,7 +1,7 @@
-import pyodbc
+#import pyodbc
 import flask
-import json
-import os
+#import json
+#import os
 
 app = flask.Flask("trivia")
 app.url_map.strict_slashes = False
