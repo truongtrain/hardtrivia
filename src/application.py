@@ -6,7 +6,7 @@ import os
 app = flask.Flask("trivia")
 app.url_map.strict_slashes = False
 
-@app.route("/question/", methods=['GET'])
+@app.route('/question', methods=['GET'])
 def getQuestion():
     return 'hello Alan'
     # driver = os.environ['driver']
