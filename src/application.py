@@ -5,8 +5,7 @@ import os
 
 app = flask.Flask("trivia")
 
-#get random question
-@app.route("/", methods=['GET'])
+@app.route("/question", methods=['GET'])
 def getQuestion():
     return 'hello Alan'
     # driver = os.environ['driver']
