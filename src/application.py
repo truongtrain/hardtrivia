@@ -25,37 +25,39 @@ def getQuestion(num_questions):
     trivias = []
     jsonarray = []
     for row in cursor:
-        trivia = Question
-        trivia.correct = row[1]
-        trivia.question = str(row[2]).replace("\"", "'")
-        trivia.topic = row[3]
-        trivia.class1 = row[4]
-        if row[5] is not None:
-            trivia.class2 = row[5]
-        trivias.append(trivia)
-        #correct = row[1]
-        #question = str(row[2]).replace("\"", "'")
-        #topic = row[3]
-        #class1 = row[4]
+        #trivia = Question
+        #trivia.correct = row[1]
+        #trivia.question = str(row[2]).replace("\"", "'")
+        #trivia.topic = row[3]
+        #trivia.class1 = row[4]
+        trivias.append(json.dumps(
+            {'correct': row[1],
+             'question': str(row[2]).replace("\"", "'"),
+             'answers': [],
+             'topic': row[3],
+             'class1': row[4],
+             'class2': row[5]}))
 
     for trivia in trivias:
-        if trivia.class2 is None:
+        triviajson = json.loads(trivia)
+        if not triviajson["class2"]:
             query = "select top(3) Answer from Trivia where Answer in (select Answer from Trivia " \
                     "where Topic = ? and Class1 = ? and Answer != ?) group by Answer order by newid()"
-            tuple = (trivia.topic, trivia.class1, trivia.correct)
+            tuple = (triviajson["topic"], triviajson["class1"], triviajson["correct"])
         else:
             #class2 = row[5]
             query = "select top(3) Answer from Trivia where Answer in (select Answer from Trivia " \
                     "where Topic = ? and Class1 = ? and Class2 = ? and Answer != ?) group by Answer order by newid()"
-            tuple = (trivia.topic, trivia.class1, trivia.class2, trivia.correct)
+            tuple = (triviajson["topic"], triviajson["class1"], triviajson["class2"], triviajson["correct"])
         cursor.execute(query, tuple)
         answers = []
         for row in cursor:
             answers.append(row[0])
         # get more answers if necessary
         if len(answers) < 3:
-            getMoreAnswers(answers, cursor, trivia.topic, trivia.class1, trivia.correct)
-        triviajson = json.dumps({'correct': trivia.correct, 'question': trivia.question, 'answers': answers})
+            getMoreAnswers(answers, cursor, triviajson["topic"], triviajson["class1"], triviajson["correct"])
+        triviajson["answers"] = answers
+        #triviajson = json.dumps({'correct': trivia.correct, 'question': trivia.question, 'answers': answers})
         jsonarray.append(triviajson)
 
     return jsonify({'trivia': jsonarray})
