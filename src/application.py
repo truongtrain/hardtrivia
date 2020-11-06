@@ -30,6 +30,8 @@ def getQuestion(num_questions):
         # get more answers if necessary
         if len(answers) < 3:
             get_more_answers(answers, cursor, triviajson["topic"], triviajson["class1"], triviajson["correct"])
+        answers.append(triviajson["correct"])
+        answers.sort()
         triviajson["answers"] = answers
         jsonarray.append(triviajson)
 
