@@ -9,29 +9,10 @@ app = flask.Flask("trivia")
 
 @app.route('/question/<num_questions>', methods=['GET'])
 def getQuestion(num_questions):
-    driver = os.environ['driver']
-    server = os.environ['server']
-    database = os.environ['database']
-    uid = os.environ['uid']
-    pwd = os.environ['pwd']
-    cnxn = pyodbc.connect("Driver={%s};"
-                      "Server=%s;"
-                      "Database=%s;"
-                      "uid=%s;"
-                      "pwd=%s" % ( driver, server, database, uid, pwd ))
+    cnxn = connect_db()
     cursor = cnxn.cursor()
-    cursor.execute("select top(?) * from Trivia order by newid()", int(num_questions))
-    trivias = []
     jsonarray = []
-    for row in cursor:
-        trivias.append(json.dumps(
-            {'correct': row[1],
-             'question': str(row[2]).replace("\"", "'"),
-             'answers': [],
-             'topic': row[3],
-             'class1': row[4],
-             'class2': row[5]}))
-
+    trivias = load_trivia(cursor, num_questions)
     for trivia in trivias:
         triviajson = json.loads(trivia)
         if not triviajson["class2"]:
@@ -53,6 +34,35 @@ def getQuestion(num_questions):
         jsonarray.append(triviajson)
 
     return jsonify({'trivia': jsonarray})
+
+
+def load_trivia(cursor, num_questions):
+    cursor.execute("select top(?) * from Trivia order by newid()", int(num_questions))
+    trivias = []
+    for row in cursor:
+        trivias.append(json.dumps(
+            {'correct': row[1],
+             'question': str(row[2]).replace("\"", "'"),
+             'answers': [],
+             'topic': row[3],
+             'class1': row[4],
+             'class2': row[5]}))
+    return trivias
+
+
+def connect_db():
+    driver = os.environ['driver']
+    server = os.environ['server']
+    database = os.environ['database']
+    uid = os.environ['uid']
+    pwd = os.environ['pwd']
+    cnxn = pyodbc.connect("Driver={%s};"
+                          "Server=%s;"
+                          "Database=%s;"
+                          "uid=%s;"
+                          "pwd=%s" % (driver, server, database, uid, pwd))
+    return cnxn
+
 
 def get_more_answers(answers, cursor, topic, class1, answer):
     numMissing = 3 - len(answers)
