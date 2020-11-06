@@ -25,11 +25,6 @@ def getQuestion(num_questions):
     trivias = []
     jsonarray = []
     for row in cursor:
-        #trivia = Question
-        #trivia.correct = row[1]
-        #trivia.question = str(row[2]).replace("\"", "'")
-        #trivia.topic = row[3]
-        #trivia.class1 = row[4]
         trivias.append(json.dumps(
             {'correct': row[1],
              'question': str(row[2]).replace("\"", "'"),
@@ -45,7 +40,6 @@ def getQuestion(num_questions):
                     "where Topic = ? and Class1 = ? and Answer != ?) group by Answer order by newid()"
             tuple = (triviajson["topic"], triviajson["class1"], triviajson["correct"])
         else:
-            #class2 = row[5]
             query = "select top(3) Answer from Trivia where Answer in (select Answer from Trivia " \
                     "where Topic = ? and Class1 = ? and Class2 = ? and Answer != ?) group by Answer order by newid()"
             tuple = (triviajson["topic"], triviajson["class1"], triviajson["class2"], triviajson["correct"])
@@ -55,14 +49,13 @@ def getQuestion(num_questions):
             answers.append(row[0])
         # get more answers if necessary
         if len(answers) < 3:
-            getMoreAnswers(answers, cursor, triviajson["topic"], triviajson["class1"], triviajson["correct"])
+            get_more_answers(answers, cursor, triviajson["topic"], triviajson["class1"], triviajson["correct"])
         triviajson["answers"] = answers
-        #triviajson = json.dumps({'correct': trivia.correct, 'question': trivia.question, 'answers': answers})
         jsonarray.append(triviajson)
 
     return jsonify({'trivia': jsonarray})
 
-def getMoreAnswers(answers, cursor, topic, class1, answer):
+def get_more_answers(answers, cursor, topic, class1, answer):
     numMissing = 3 - len(answers)
     placeholders = ",".join("?" * len(answers))
     query = "select top(" + str(numMissing) + ") Answer from Trivia where Answer in (select Answer from Trivia " \
