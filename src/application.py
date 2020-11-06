@@ -9,7 +9,6 @@ app = flask.Flask("trivia")
 
 @app.route('/question/<num_questions>', methods=['GET'])
 def getQuestion(num_questions):
-    numQuestions = num_questions
     driver = os.environ['driver']
     server = os.environ['server']
     database = os.environ['database']
@@ -21,7 +20,7 @@ def getQuestion(num_questions):
                       "uid=%s;"
                       "pwd=%s" % ( driver, server, database, uid, pwd ))
     cursor = cnxn.cursor()
-    cursor.execute("select top(10) * from Trivia order by newid()")
+    cursor.execute("select top(?) * from Trivia order by newid()", int(num_questions))
     trivias = []
     jsonarray = []
     for row in cursor:
