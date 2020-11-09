@@ -23,13 +23,14 @@ def getQuestion(num_questions):
             query = "select top(3) Answer from Trivia where Answer in (select Answer from Trivia " \
                     "where Topic = ? and Class1 = ? and Class2 = ? and Answer != ?) group by Answer order by newid()"
             tuple = (triviajson["topic"], triviajson["class1"], triviajson["class2"], triviajson["correct"])
-        cursor.execute(query, tuple)
         answers = []
+        cursor.execute(query, tuple)
         for row in cursor:
             answers.append(row[0])
         # get more answers if necessary
         if len(answers) < 3:
-            get_more_answers(answers, cursor, triviajson["topic"], triviajson["class1"], triviajson["correct"])
+            additional_answers = get_more_answers(answers, cursor, triviajson["topic"], triviajson["class1"], triviajson["correct"])
+            answers = answers + additional_answers
         answers.append(triviajson["correct"])
         answers.sort()
         triviajson["answers"] = answers
@@ -67,13 +68,17 @@ def connect_db():
 
 
 def get_more_answers(answers, cursor, topic, class1, answer):
+    additional_answers = [];
     numMissing = 3 - len(answers)
-    placeholders = ",".join("?" * len(answers))
-    query = "select top(" + str(numMissing) + ") Answer from Trivia where Answer in (select Answer from Trivia " \
-                                              "where Topic = ? and Class1 = ? and Answer != ? and Answer not in (?)) group by Answer order by newid()"
-    cursor.execute(query, topic, class1, answer, placeholders)
+    query = "select Answer from Trivia where Answer in (select Answer from Trivia " \
+                                              "where Topic = ? and Class1 = ? and Answer != ?) group by Answer order by newid()"
+    cursor.execute(query, topic, class1, answer)
     for row in cursor:
-        answers.append(row[0])
+        if row[0] != answer and row[0] not in answers:
+            additional_answers.append(row[0])
+            if len(additional_answers) == numMissing:
+                break
+    return additional_answers
 
 class Question:
     def __init__(self, question, correct, answers, topic, class1, class2):
