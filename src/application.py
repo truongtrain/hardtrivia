@@ -85,6 +85,8 @@ def get_weakest_contestant(coryats, contestants):
 
 def get_incorrect_responses(parentheses1, parentheses2, response_string):
     incorrect_responses = []
+    if ': ' not in response_string:
+        return []
     while parentheses1 >=0 and parentheses2 >= 0:
         string_to_remove = response_string[parentheses1:parentheses2+1]
         response_string = response_string.replace(string_to_remove,'')
