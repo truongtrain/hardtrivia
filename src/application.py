@@ -21,13 +21,17 @@ def getGame(game_id):
         pass
     else:
         ssl._create_default_https_context = _create_unverified_https_context
-    clues_url = 'http://web.archive.org/web/20220524022830/https://j-archive.com/showgame.php?game_id=' + str(game_id)
+    #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
+    clues_url = 'http://web.archive.org/web/20220518035530/https://j-archive.com/showgame.php?game_id=986'
     tables = panda.read_html(clues_url)
+    #jeopardy_board = tables[1]
     jeopardy_board = tables[2]
+    #double_jeopardy_board = get_board(tables, 60)
     double_jeopardy_board = get_board(tables, 71)
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
-    responses_url = 'http://web.archive.org/web/20220524022830/https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
+    #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
+    responses_url = 'http://web.archive.org/web/20210821084245/https://j-archive.com/showgameresponses.php?game_id=986'
     tables = panda.read_html(responses_url)
     jeopardy_responses = tables[1]
     double_jeopardy_responses = get_board(tables, 90)
