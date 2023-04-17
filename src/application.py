@@ -22,7 +22,7 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20220525012651/https://j-archive.com/showgame.php?game_id=1048'
+    clues_url = 'http://web.archive.org/web/20220525012651/https://j-archive.com/showgame.php?game_id=' + str(game_id)
     tables = panda.read_html(clues_url)
     #jeopardy_board = tables[1]
     jeopardy_board = tables[2]
@@ -31,7 +31,7 @@ def getGame(game_id):
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20220525012651/https://j-archive.com/showgameresponses.php?game_id=1048'
+    responses_url = 'http://web.archive.org/web/20220525012651/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
     tables = panda.read_html(responses_url)
     jeopardy_responses = tables[1]
     double_jeopardy_responses = get_board(tables, 90)
@@ -102,12 +102,16 @@ def get_incorrect_responses(parentheses1, parentheses2, response_string):
 
 def get_correct_response(response, correct_contestant):
     delimiter = ' '
+    correct_response = ''
     if correct_contestant != '':
-        correct_response = delimiter.join(response).replace(correct_contestant,'')
+        for word in response:
+            if word == correct_contestant:
+                continue
+            correct_response += word + ' '
     else:
         correct_response = delimiter.join(response)
         correct_response = correct_response.replace('Triple Stumper','')
-    return correct_response
+    return correct_response.strip()
 
 
 def get_response(incorrect_responses, incorrect_contestants, response_string):
