@@ -22,16 +22,16 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20220525012651/https://j-archive.com/showgame.php?game_id=' + str(game_id)
-    tables = panda.read_html(clues_url)
+    clues_url = 'http://web.archive.org/web/20191108012307/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
+    tables = panda.read_html(clues_url, extract_links='all')
     #jeopardy_board = tables[1]
     jeopardy_board = tables[2]
-    #double_jeopardy_board = get_board(tables, 60)
-    double_jeopardy_board = get_board(tables, 71)
+    double_jeopardy_board = get_board(tables, 60)
+    #double_jeopardy_board = get_board(tables, 71)
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20220525012651/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
+    responses_url = 'http://web.archive.org/web/20191108012307/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
     tables = panda.read_html(responses_url)
     jeopardy_responses = tables[1]
     double_jeopardy_responses = get_board(tables, 90)
@@ -55,8 +55,9 @@ def getGame(game_id):
     'jeopardy_round': jeopardy_clues,
     'double_jeopardy_round': double_jeopardy_clues,
     'final_jeopardy': {
-        'category': final_jeopardy_category.to_dict('records')[0][0],
-        'clue': final_jeopardy_clue.to_dict('records')[0][0],
+        'category': final_jeopardy_category.to_dict('records')[0][0][0],
+        'clue': final_jeopardy_clue.to_dict('records')[0][0][0],
+        'url': final_jeopardy_clue.to_dict('records')[0][0][1],
         'contestant_responses': get_contestant_responses(final_jeopardy_responses.to_dict('records')),
         'correct_response': fj_correct_response
     }})
@@ -172,12 +173,15 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'response': '',
         'daily_double_wager': ''
     }
-    clue = jeopardy_board.to_dict('records')[difficulty_level][category_number].split()
+    clue = jeopardy_board.to_dict('records')[difficulty_level][category_number][0].split()
+    url = jeopardy_board.to_dict('records')[difficulty_level][category_number][1]
+    if 'suggestcorrection.php' in url:
+        url = ''
     clue_value = clue[0]
     clue_number = clue[1]
     delimiter = ' '
     clue_text = delimiter.join(clue[2:])
-    category = jeopardy_board.to_dict('records')[0][category_number]
+    category = jeopardy_board.to_dict('records')[0][category_number][0]
     if category.find('(') >= 0 and category.find(')') >= 0:
         start_index = category.find('(')
         end_index = category.find(')')
@@ -199,7 +203,8 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'value': clue_value,
         'text': remove_parentheses(clue_text.upper()),
         'response': clue_response,
-        'daily_double_wager': daily_double_wager
+        'daily_double_wager': daily_double_wager,
+        'url': url
     }
 
 def remove_parentheses(clue_text):
