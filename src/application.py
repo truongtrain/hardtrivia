@@ -22,23 +22,28 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20220519153133/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
+    clues_url = 'http://web.archive.org/web/20220529012247/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
     tables = panda.read_html(clues_url, extract_links='all')
+    board_tables = panda.read_html(clues_url, attrs = {'class': 'round'}, extract_links='all')
     #jeopardy_board = tables[1]
-    jeopardy_board = tables[2]
-    double_jeopardy_board = get_board(tables, 60)
+    jeopardy_board = board_tables[0]
     #double_jeopardy_board = get_board(tables, 71)
+    double_jeopardy_board = board_tables[1]
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20220519153133/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    tables = panda.read_html(responses_url)
-    jeopardy_responses = tables[1]
-    double_jeopardy_responses = get_board(tables, 90)
-    coryats = tables[-1]
+    responses_url = 'http://web.archive.org/web/20220529012247/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
+    responses_tables = panda.read_html(responses_url)
+    responses_board_tables = panda.read_html(responses_url, attrs = {'class': 'round'})
+    jeopardy_responses = responses_board_tables[0]
+    double_jeopardy_responses = responses_board_tables[1]
+    # double_jeopardy_responses = get_board(responses_tables, 90)
+    coryats = responses_tables[-1]
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
+    print(contestants)
+    print(coryats)
     weakest_contestant = get_weakest_contestant(coryats, contestants)
-    final_jeopardy_responses = tables[-3]
+    final_jeopardy_responses = responses_tables[-3]
     fj_correct_response = get_fj_correct_response(responses_url)
     # generate clue_json for each category_number and difficulty_level
     jeopardy_clues = []
