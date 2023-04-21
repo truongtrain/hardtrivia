@@ -22,8 +22,27 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20191108012307/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
+    clues_url = 'http://web.archive.org/web/20220519153133/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
     tables = panda.read_html(clues_url, extract_links='all')
+
+    # load image urls
+    html_text = requests.get(clues_url).text
+    soup = BeautifulSoup(html_text, 'html.parser')
+    clues = soup.find_all('td', {'class': 'clue'})
+    clue_url_map = {}
+    for clue_html in clues:
+        clue_number_html = clue_html.find('td', {'class': 'clue_order_number'})
+        try:
+            clue_id_href = clue_number_html.find('a')['href']
+            id_index = clue_id_href.find('clue_id=')
+            clue_id = clue_id_href[id_index+len('clue_id='):]
+            clue_text_html = clue_html.find('td', {'class': 'clue_text'})  
+            anchor_html = clue_text_html.find('a')   
+            if anchor_html is not None:
+                clue_url_map[clue_id] = anchor_html['href']               
+        except:
+            pass
+
     #jeopardy_board = tables[1]
     jeopardy_board = tables[2]
     double_jeopardy_board = get_board(tables, 60)
@@ -31,7 +50,7 @@ def getGame(game_id):
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20191108012307/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
+    responses_url = 'http://web.archive.org/web/20220519153133/https://j-archive.com/showgameresponses.php?game_id=' + str(game_id)
     tables = panda.read_html(responses_url)
     jeopardy_responses = tables[1]
     double_jeopardy_responses = get_board(tables, 90)
@@ -47,8 +66,8 @@ def getGame(game_id):
         jeopardy_clues.append([])
         double_jeopardy_clues.append([])
         for difficulty_level in range(1, 6):
-            jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, 1, contestants))
-            double_jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants))
+            jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, 1, contestants, clue_url_map))
+            double_jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map))
     return jsonify({
     'contestants': contestants,
     'weakest_contestant': weakest_contestant,
@@ -163,7 +182,7 @@ def get_clue_value(difficulty_level, round):
     return values[difficulty_level-1] * round
 
 
-def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, round, contestants):
+def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, round, contestants, clue_url_map):
     if (str(jeopardy_board[category_number][difficulty_level]) == 'nan'):
         return {
         'number': '',
@@ -175,8 +194,8 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     }
     clue = jeopardy_board.to_dict('records')[difficulty_level][category_number][0].split()
     url = jeopardy_board.to_dict('records')[difficulty_level][category_number][1]
-    if 'suggestcorrection.php' in url:
-        url = ''
+    id_index = url.find('clue_id=')
+    clue_id = url[id_index+len('clue_id='):]
     clue_value = clue[0]
     clue_number = clue[1]
     delimiter = ' '
@@ -198,14 +217,20 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     else:
         clue_value = int(clue_value[1:])
     return {
+        'clue_id': clue_id,
         'number': int(clue_number),
         'category': category,
         'value': clue_value,
         'text': remove_parentheses(clue_text.upper()),
         'response': clue_response,
         'daily_double_wager': daily_double_wager,
-        'url': url
+        'url': get_clue_url(clue_id, clue_url_map)
     }
+
+def get_clue_url(clue_id, clue_url_map):
+    if clue_id in clue_url_map:
+        return clue_url_map[clue_id]
+    return ''
 
 def remove_parentheses(clue_text):
     if clue_text[0] == '(':
