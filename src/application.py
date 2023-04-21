@@ -25,9 +25,7 @@ def getGame(game_id):
     clues_url = 'http://web.archive.org/web/20220529012247/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
     tables = panda.read_html(clues_url, extract_links='all')
     board_tables = panda.read_html(clues_url, attrs = {'class': 'round'}, extract_links='all')
-    #jeopardy_board = tables[1]
     jeopardy_board = board_tables[0]
-    #double_jeopardy_board = get_board(tables, 71)
     double_jeopardy_board = board_tables[1]
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
@@ -37,11 +35,8 @@ def getGame(game_id):
     responses_board_tables = panda.read_html(responses_url, attrs = {'class': 'round'})
     jeopardy_responses = responses_board_tables[0]
     double_jeopardy_responses = responses_board_tables[1]
-    # double_jeopardy_responses = get_board(responses_tables, 90)
     coryats = responses_tables[-1]
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
-    print(contestants)
-    print(coryats)
     weakest_contestant = get_weakest_contestant(coryats, contestants)
     final_jeopardy_responses = responses_tables[-3]
     fj_correct_response = get_fj_correct_response(responses_url)
