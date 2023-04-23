@@ -170,8 +170,9 @@ def get_clue_response(response, response_string, contestants):
     correct_contestant = ''
     incorrect_contestants = []
     for contestant in contestants:
-        incorrect_response = contestant + ':'
-        if incorrect_response in response_string:
+        incorrect_response_what = contestant + ': What'
+        incorrect_response_who = contestant + ': Who'
+        if incorrect_response_what in response_string or incorrect_response_who in response_string:
             incorrect_contestants.append(format_contestant_name(contestant))
         elif contestant in response[-1]:
             correct_contestant = contestant  
