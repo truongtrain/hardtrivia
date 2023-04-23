@@ -23,8 +23,23 @@ def getGame(game_id):
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
     clues_url = 'http://web.archive.org/web/20220529012247/http://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    tables = panda.read_html(clues_url, extract_links='all')
-    board_tables = panda.read_html(clues_url, attrs = {'class': 'round'}, extract_links='all')
+    attempts = 0
+    while attempts < 5:
+        try:
+            attempts+=1
+            tables = panda.read_html(clues_url, extract_links='all')
+            break
+        except:
+            print('Failed to load page. Trying again.')
+    attempts = 0
+    while attempts < 5: 
+        try:       
+            attempts+=1
+            board_tables = panda.read_html(clues_url, attrs = {'class': 'round'}, extract_links='all')
+            break
+        except:
+            print('Failed to load board tables. Trying again.')
+            board_tables = panda.read_html(clues_url, attrs = {'class': 'round'}, extract_links='all')
     jeopardy_board = board_tables[0]
     double_jeopardy_board = board_tables[1]
     final_jeopardy_category = tables[-4]
