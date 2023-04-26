@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import jsonify
 from flask_cors import CORS, cross_origin
+import time
 
 app = flask.Flask("trivia")
 CORS(app)
@@ -22,7 +23,7 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20220529031440/https://j-archive.com/showgame.php?game_id=1099'
+    clues_url = 'http://web.archive.org/web/20220524030706/https://j-archive.com/showgame.php?game_id=1125'
     attempts = 0
     while attempts < 5:
         try:
@@ -31,6 +32,7 @@ def getGame(game_id):
             break
         except:
             print('Failed to load page. Trying again.')
+            time.sleep(1)
     attempts = 0
     while attempts < 5: 
         try:       
@@ -39,12 +41,13 @@ def getGame(game_id):
             break
         except:
             print('Failed to load board tables. Trying again.')
+            time.sleep(1)
     jeopardy_board = board_tables[0]
     double_jeopardy_board = board_tables[1]
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20220529031440/https://j-archive.com/showgameresponses.php?game_id=1099'
+    responses_url = 'http://web.archive.org/web/20220524030706/https://j-archive.com/showgameresponses.php?game_id=1125'
     attempts = 0
     while attempts < 5:
         try:
@@ -53,6 +56,7 @@ def getGame(game_id):
             break
         except:
             print('Failed to load responses. Trying again.')
+            time.sleep(1)
     attempts = 0
     while attempts < 5:
         try:
@@ -61,6 +65,7 @@ def getGame(game_id):
             break
         except:
             print('Failed to load response tables. Trying again.')
+            time.sleep(1)
     jeopardy_responses = responses_board_tables[0]
     double_jeopardy_responses = responses_board_tables[1]
     coryats = responses_tables[-1]
@@ -219,8 +224,9 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     }
     clue = jeopardy_board.to_dict('records')[difficulty_level][category_number][0].split()
     url = jeopardy_board.to_dict('records')[difficulty_level][category_number][1]
-    id_index = url.find('clue_id=')
-    clue_id = url[id_index+len('clue_id='):]
+    if url is not None:
+        id_index = url.find('clue_id=')
+        clue_id = url[id_index+len('clue_id='):]
     clue_value = clue[0]
     clue_number = clue[1]
     delimiter = ' '
