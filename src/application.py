@@ -213,7 +213,7 @@ def get_clue_value(difficulty_level, round):
 
 
 def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, round, contestants, clue_url_map):
-    if (str(jeopardy_board[category_number][difficulty_level]) == 'nan'):
+    if (str(jeopardy_board[category_number][difficulty_level][0]) == ''):
         return {
         'number': '',
         'category': '',
@@ -223,10 +223,9 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'daily_double_wager': ''
     }
     clue = jeopardy_board.to_dict('records')[difficulty_level][category_number][0].split()
-    url = jeopardy_board.to_dict('records')[difficulty_level][category_number][1]
-    if url is not None:
-        id_index = url.find('clue_id=')
-        clue_id = url[id_index+len('clue_id='):]
+    url = jeopardy_board.to_dict('records')[difficulty_level][category_number][1]  
+    id_index = url.find('clue_id=')
+    clue_id = url[id_index+len('clue_id='):]
     clue_value = clue[0]
     clue_number = clue[1]
     delimiter = ' '
