@@ -242,8 +242,8 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     if category.find('(') >= 0 and category.find(')') >= 0:
         start_index = category.find('(')
         end_index = category.find(')')
-        category = category[0:start_index] + category[end_index+1:]
         category_note = category[start_index+1:end_index]
+        category = category[0:start_index] + category[end_index+1:]   
     response_string = jeopardy_responses.to_dict('records')[difficulty_level][category_number]
     response = response_string.split()[2:]
     clue_response = get_clue_response(response, response_string, contestants)
