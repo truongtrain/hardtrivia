@@ -238,6 +238,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     delimiter = ' '
     clue_text = delimiter.join(clue[2:])
     category = jeopardy_board.to_dict('records')[0][category_number][0]
+    category_note = ''
     if category.find('(') >= 0 and category.find(')') >= 0:
         start_index = category.find('(')
         end_index = category.find(')')
