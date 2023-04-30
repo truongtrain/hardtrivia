@@ -23,7 +23,7 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20220524030706/https://j-archive.com/showgame.php?game_id=1125'
+    clues_url = 'http://web.archive.org/web/20210820170527/https://www.j-archive.com/showgame.php?game_id=1175'
     attempts = 0
     while attempts < 5:
         try:
@@ -47,7 +47,7 @@ def getGame(game_id):
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20220524030706/https://j-archive.com/showgameresponses.php?game_id=1125'
+    responses_url = 'http://web.archive.org/web/20210820170527/https://j-archive.com/showgameresponses.php?game_id=1175'
     attempts = 0
     while attempts < 5:
         try:
@@ -171,13 +171,20 @@ def get_response(incorrect_responses, incorrect_contestants, response_string):
     return response_string.split()[2:]
 
 
+def is_incorrect_response(contestant, response_string):
+    what_response = 'what is'
+    what_response2 = 'what\'s'
+    who_response = 'who is'
+    who_response2 = 'who\'s'
+    incorrect_response = contestant + ': '
+    response_lower = response_string.lower()       
+    return incorrect_response in response_string and (what_response in response_lower or what_response2 in response_lower or who_response in response_lower or who_response2 in response_lower) 
+
 def get_clue_response(response, response_string, contestants):
     correct_contestant = ''
     incorrect_contestants = []
     for contestant in contestants:
-        incorrect_response_what = contestant + ': What'
-        incorrect_response_who = contestant + ': Who'
-        if incorrect_response_what in response_string or incorrect_response_who in response_string:
+        if is_incorrect_response(contestant, response_string):
             incorrect_contestants.append(format_contestant_name(contestant))
         elif contestant in response[-1]:
             correct_contestant = contestant  
@@ -235,6 +242,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         start_index = category.find('(')
         end_index = category.find(')')
         category = category[0:start_index] + category[end_index+1:]
+        category_note = category[start_index+1:end_index]
     response_string = jeopardy_responses.to_dict('records')[difficulty_level][category_number]
     response = response_string.split()[2:]
     clue_response = get_clue_response(response, response_string, contestants)
@@ -250,6 +258,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'clue_id': clue_id,
         'number': int(clue_number),
         'category': category,
+        'category_note': category_note,
         'value': clue_value,
         'text': remove_parentheses(clue_text.upper()),
         'response': clue_response,
