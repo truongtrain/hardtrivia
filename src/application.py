@@ -23,7 +23,7 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20210820170527/https://www.j-archive.com/showgame.php?game_id=1175'
+    clues_url = 'http://web.archive.org/web/20230207083825/https://j-archive.com/showgame.php?game_id=1266'
     attempts = 0
     while attempts < 5:
         try:
@@ -47,7 +47,7 @@ def getGame(game_id):
     final_jeopardy_category = tables[-4]
     final_jeopardy_clue = tables[-3]
     #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20210820170527/https://j-archive.com/showgameresponses.php?game_id=1175'
+    responses_url = 'http://web.archive.org/web/20230207083825/https://j-archive.com/showgameresponses.php?game_id=1266'
     attempts = 0
     while attempts < 5:
         try:
@@ -174,11 +174,13 @@ def get_response(incorrect_responses, incorrect_contestants, response_string):
 def is_incorrect_response(contestant, response_string):
     what_response = 'what is'
     what_response2 = 'what\'s'
+    what_response3 = 'what are'
     who_response = 'who is'
     who_response2 = 'who\'s'
+    who_response3 = 'who are'
     incorrect_response = contestant + ': '
     response_lower = response_string.lower()       
-    return incorrect_response in response_string and (what_response in response_lower or what_response2 in response_lower or who_response in response_lower or who_response2 in response_lower) 
+    return incorrect_response in response_string and (what_response in response_lower or what_response2 in response_lower or what_response3 in response_lower or who_response in response_lower or who_response2 in response_lower or who_response3 in response_lower) 
 
 def get_clue_response(response, response_string, contestants):
     correct_contestant = ''
