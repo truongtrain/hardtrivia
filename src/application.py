@@ -72,7 +72,7 @@ def getGame(game_id):
             print('Failed to load response tables. Trying again.')
             time.sleep(1)
     jeopardy_responses = responses_board_tables[0]
-    if len(responses_board_tables) > 1:
+    if len(board_tables) > 1:
         double_jeopardy_responses = responses_board_tables[1]
     else:
         double_jeopardy_board = []
