@@ -22,15 +22,16 @@ def getGame(game_id):
         pass
     else:
         ssl._create_default_https_context = _create_unverified_https_context
-    #clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + str(game_id)
-    clues_url = 'http://web.archive.org/web/20230207083825/https://j-archive.com/showgame.php?game_id=1266'
+    clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + game_id
+    #clues_url = 'http://web.archive.org/web/20210820171013/https://www.j-archive.com/showgame.php?game_id=3332'
     attempts = 0
     while attempts < 5:
         try:
             attempts+=1
             tables = panda.read_html(clues_url, extract_links='all')
             break
-        except:
+        except Exception as e:
+            print(e)
             print('Failed to load page. Trying again.')
             time.sleep(1)
     attempts = 0
@@ -40,14 +41,16 @@ def getGame(game_id):
             board_tables = panda.read_html(clues_url, attrs = {'class': 'round'}, extract_links='all')
             break
         except:
+            print(e)
             print('Failed to load board tables. Trying again.')
             time.sleep(1)
     jeopardy_board = board_tables[0]
-    double_jeopardy_board = board_tables[1]
-    final_jeopardy_category = tables[-4]
-    final_jeopardy_clue = tables[-3]
-    #responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + str(game_id)
-    responses_url = 'http://web.archive.org/web/20230207083825/https://j-archive.com/showgameresponses.php?game_id=1266'
+    if len(board_tables) > 1:
+        double_jeopardy_board = board_tables[1]
+        final_jeopardy_category = tables[-5]
+        final_jeopardy_clue = tables[-4]
+    responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + game_id
+    #responses_url = 'http://web.archive.org/web/20210820171013/https://www.j-archive.com/showgame.php?game_id=3332'
     attempts = 0
     while attempts < 5:
         try:
@@ -55,6 +58,7 @@ def getGame(game_id):
             responses_tables = panda.read_html(responses_url)
             break
         except:
+            print(e)
             print('Failed to load responses. Trying again.')
             time.sleep(1)
     attempts = 0
@@ -64,10 +68,19 @@ def getGame(game_id):
             responses_board_tables = panda.read_html(responses_url, attrs = {'class': 'round'})
             break
         except:
+            print(e)
             print('Failed to load response tables. Trying again.')
             time.sleep(1)
     jeopardy_responses = responses_board_tables[0]
-    double_jeopardy_responses = responses_board_tables[1]
+    if len(responses_board_tables) > 1:
+        double_jeopardy_responses = responses_board_tables[1]
+    else:
+        double_jeopardy_board = []
+        double_jeopardy_responses = []
+        final_jeopardy_category = []
+        final_jeopardy_clue = []
+        final_jeopardy_responses = []
+        fj_correct_response = []
     coryats = responses_tables[-1]
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
     weakest_contestant = get_weakest_contestant(coryats, contestants)
@@ -82,19 +95,27 @@ def getGame(game_id):
         double_jeopardy_clues.append([])
         for difficulty_level in range(1, 6):
             jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, 1, contestants, clue_url_map))
-            double_jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map))
+            if len(double_jeopardy_board) > 0:
+                double_jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map))
     return jsonify({
     'contestants': contestants,
     'weakest_contestant': weakest_contestant,
+    #'weakest_contestant': 'Roger',
     'jeopardy_round': jeopardy_clues,
     'double_jeopardy_round': double_jeopardy_clues,
-    'final_jeopardy': {
+    'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
+    })
+
+def get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response):
+    if len(final_jeopardy_category) == 0:
+        return [];
+    return {
         'category': final_jeopardy_category.to_dict('records')[0][0][0],
         'clue': final_jeopardy_clue.to_dict('records')[0][0][0],
         'url': final_jeopardy_clue.to_dict('records')[0][0][1],
         'contestant_responses': get_contestant_responses(final_jeopardy_responses.to_dict('records')),
         'correct_response': fj_correct_response
-    }})
+    }
 
 def get_clue_url_map(clues_url):
     html_text = requests.get(clues_url).text
