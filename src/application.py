@@ -47,8 +47,6 @@ def getGame(game_id):
     jeopardy_board = board_tables[0]
     if len(board_tables) > 1:
         double_jeopardy_board = board_tables[1]
-        final_jeopardy_category = tables[-5]
-        final_jeopardy_clue = tables[-4]
     responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + game_id
     #responses_url = 'http://web.archive.org/web/20210820171013/https://www.j-archive.com/showgame.php?game_id=3332'
     attempts = 0
@@ -72,8 +70,10 @@ def getGame(game_id):
             print('Failed to load response tables. Trying again.')
             time.sleep(1)
     jeopardy_responses = responses_board_tables[0]
-    if len(board_tables) > 1:
+    if len(responses_board_tables) > 1:
         double_jeopardy_responses = responses_board_tables[1]
+        final_jeopardy_category = tables[-5]
+        final_jeopardy_clue = tables[-4]
     else:
         double_jeopardy_board = []
         double_jeopardy_responses = []
@@ -100,7 +100,7 @@ def getGame(game_id):
     return jsonify({
     'contestants': contestants,
     'weakest_contestant': weakest_contestant,
-    #'weakest_contestant': 'Roger',
+    #'weakest_contestant': 'Mike',
     'jeopardy_round': jeopardy_clues,
     'double_jeopardy_round': double_jeopardy_clues,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
@@ -271,7 +271,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     response = response_string.split()[2:]
     clue_response = get_clue_response(response, response_string, contestants)
     daily_double_wager = 0
-    if clue_value == 'DD:':
+    if clue_value == 'DD:':      
         daily_double_wager = int(clue_number.replace(',', '')[1:])
         clue_value = get_clue_value(difficulty_level, round)
         clue_number = clue_text.split()[0]
@@ -284,7 +284,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'category': category,
         'category_note': category_note,
         'value': clue_value,
-        'text': remove_parentheses(clue_text.upper()),
+        'text': format_text(clue_text.upper()),
         'response': clue_response,
         'daily_double_wager': daily_double_wager,
         'url': get_clue_url(clue_id, clue_url_map)
@@ -295,11 +295,14 @@ def get_clue_url(clue_id, clue_url_map):
         return clue_url_map[clue_id]
     return ''
 
-def remove_parentheses(clue_text):
+def format_text(clue_text):
     if clue_text[0] == '(':
-        idx2 = clue_text.index(')')
-        return clue_text[idx2+1:]
+        clue_text = remove_parentheses(clue_text)
     return clue_text
+
+def remove_parentheses(clue_text): 
+    idx2 = clue_text.index(')')
+    return clue_text[idx2+1:]
 
 def get_contestant_responses(contestant_responses):
     responses = []
