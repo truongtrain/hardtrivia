@@ -182,7 +182,7 @@ def get_correct_response(response, correct_contestant):
     else:
         correct_response = delimiter.join(response)
         correct_response = correct_response.replace('Triple Stumper','')
-    return remove_brackets(correct_response).strip()
+    return format_text(correct_response).strip()
 
 
 def get_response(incorrect_responses, incorrect_contestants, response_string):
@@ -308,8 +308,9 @@ def get_clue_url(clue_id, clue_url_map):
     return ''
 
 def format_text(clue_text):
-    if clue_text[0] == '(':
-        clue_text = remove_parentheses(clue_text)
+    clue_text = remove_brackets(clue_text)
+    while clue_text[0] == '(':
+        clue_text = remove_parentheses(clue_text).strip()
     return clue_text
 
 def remove_parentheses(clue_text): 
