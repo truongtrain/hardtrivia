@@ -159,12 +159,13 @@ def get_weakest_contestant(coryats, contestants):
 
 def get_incorrect_responses(parentheses1, parentheses2, response_string):
     incorrect_responses = []
-    if ': ' not in response_string:
+    if ': ' not in response_string or is_correct_response(response_string):
         return []
     while parentheses1 >=0 and parentheses2 >= 0:
         string_to_remove = response_string[parentheses1:parentheses2+1]
         response_string = response_string.replace(string_to_remove,'')
-        incorrect_responses.append(string_to_remove)
+        if 'for $' not in string_to_remove and 'Ken:' not in string_to_remove:
+            incorrect_responses.append(string_to_remove)
         parentheses1 = response_string.find('(')   
         parentheses2 = response_string.find(')')
     return incorrect_responses
@@ -191,8 +192,19 @@ def get_response(incorrect_responses, incorrect_contestants, response_string):
         response_string = response_string.replace(contestant,'')
     return response_string.split()[2:]
 
+def is_correct_response(response_string):
+    what_response = 'what is [*]'
+    what_response2 = 'what\'s [*]'
+    what_response3 = 'what are [*]'
+    who_response = 'who is [*]'
+    who_response2 = 'who\'s [*]'
+    who_response3 = 'who are [*]'
+    response_lower = response_string.lower()  
+    return (what_response in response_lower or what_response2 in response_lower or what_response3 in response_lower or who_response in response_lower or who_response2 in response_lower or who_response3 in response_lower) 
 
 def is_incorrect_response(contestant, response_string):
+    if is_correct_response(response_string):
+        return False
     what_response = 'what is'
     what_response2 = 'what\'s'
     what_response3 = 'what are'
@@ -200,7 +212,7 @@ def is_incorrect_response(contestant, response_string):
     who_response2 = 'who\'s'
     who_response3 = 'who are'
     incorrect_response = contestant + ': '
-    response_lower = response_string.lower()       
+    response_lower = response_string.lower()  
     return incorrect_response in response_string and (what_response in response_lower or what_response2 in response_lower or what_response3 in response_lower or who_response in response_lower or who_response2 in response_lower or who_response3 in response_lower) 
 
 def get_clue_response(response, response_string, contestants):
