@@ -182,7 +182,7 @@ def get_correct_response(response, correct_contestant):
     else:
         correct_response = delimiter.join(response)
         correct_response = correct_response.replace('Triple Stumper','')
-    return correct_response.strip()
+    return remove_brackets(correct_response).strip()
 
 
 def get_response(incorrect_responses, incorrect_contestants, response_string):
@@ -315,6 +315,12 @@ def format_text(clue_text):
 def remove_parentheses(clue_text): 
     idx2 = clue_text.index(')')
     return clue_text[idx2+1:]
+
+def remove_brackets(clue_text): 
+    if clue_text[0] == '[':
+        idx2 = clue_text.index(']')
+        return clue_text[idx2+1:]
+    return clue_text
 
 def get_contestant_responses(contestant_responses):
     responses = []
