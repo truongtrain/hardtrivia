@@ -117,7 +117,7 @@ def getGame(game_id):
 
 def get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response):
     if len(final_jeopardy_category) == 0:
-        return [];
+        return []
     return {
         'category': final_jeopardy_category.to_dict('records')[0][0][0],
         'clue': final_jeopardy_clue.to_dict('records')[0][0][0],
@@ -149,7 +149,7 @@ def get_clue_url_map(clues_url):
 
 def format_contestant_name(contestant):
     if ' ' in contestant:
-        return contestant.split()[-1];    
+        return contestant.split()[-1]    
     return contestant
 
 def dollar_to_int(dollar):
@@ -291,7 +291,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     response = response_string.split()[2:]
     clue_response = get_clue_response(response, response_string, contestants)
     daily_double_wager = 0
-    
+
     if clue_value == 'DD:':      
         daily_double_wager = int(clue_number.replace(',', '')[1:])
         clue_value = get_clue_value(difficulty_level, round)
