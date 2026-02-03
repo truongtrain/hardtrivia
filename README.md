@@ -1,3 +1,5 @@
+# Jeopardy Flask API
+
 This repository contains a Python Flask backend API for the Jeopardy React web application (https://github.com/truongtrain/jeopardy-react).
 The API acts as a web scraper and data service, retrieving real game data from the Jeopardy archives based on a game ID provided by the frontend.
 The scraped data is normalised and returned as structured JSON, which the React app uses to render full Jeopardy-style gameplay.
