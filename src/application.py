@@ -1,5 +1,3 @@
-#import pyodbc
-#import os
 import flask
 import json
 import pandas as panda
@@ -23,8 +21,8 @@ def getGame(game_id):
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     clues_url = 'https://www.j-archive.com/showgame.php?game_id=' + game_id
-    #clues_url = 'http://web.archive.org/web/20210820171013/https://www.j-archive.com/showgame.php?game_id=3332'
     attempts = 0
+
     while attempts < 5:
         try:
             attempts+=1
@@ -34,7 +32,9 @@ def getGame(game_id):
             print(e)
             print('Failed to load page. Trying again.')
             time.sleep(1)
+    
     attempts = 0
+
     while attempts < 5: 
         try:       
             attempts+=1
@@ -44,12 +44,15 @@ def getGame(game_id):
             print(e)
             print('Failed to load board tables. Trying again.')
             time.sleep(1)
+    
     jeopardy_board = board_tables[0]
+
     if len(board_tables) > 1:
         double_jeopardy_board = board_tables[1]
+    
     responses_url = 'https://www.j-archive.com/showgameresponses.php?game_id=' + game_id
-    #responses_url = 'http://web.archive.org/web/20210820171013/https://www.j-archive.com/showgame.php?game_id=3332'
     attempts = 0
+
     while attempts < 5:
         try:
             attempts+=1
@@ -59,7 +62,9 @@ def getGame(game_id):
             print(e)
             print('Failed to load responses. Trying again.')
             time.sleep(1)
+    
     attempts = 0
+
     while attempts < 5:
         try:
             attempts+=1
@@ -69,7 +74,9 @@ def getGame(game_id):
             print(e)
             print('Failed to load response tables. Trying again.')
             time.sleep(1)
+
     jeopardy_responses = responses_board_tables[0]
+
     if len(responses_board_tables) > 1:
         double_jeopardy_responses = responses_board_tables[1]
         final_jeopardy_category = tables[-5]
@@ -81,6 +88,7 @@ def getGame(game_id):
         final_jeopardy_clue = []
         final_jeopardy_responses = []
         fj_correct_response = []
+
     coryats = responses_tables[-1]
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
     weakest_contestant = get_weakest_contestant(coryats, contestants)
@@ -90,6 +98,7 @@ def getGame(game_id):
     jeopardy_clues = []
     double_jeopardy_clues = []
     clue_url_map = get_clue_url_map(clues_url)
+
     for category_number in range(0, 6):
         jeopardy_clues.append([])
         double_jeopardy_clues.append([])
@@ -97,10 +106,10 @@ def getGame(game_id):
             jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, 1, contestants, clue_url_map))
             if len(double_jeopardy_board) > 0:
                 double_jeopardy_clues[category_number].append(get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map))
+    
     return jsonify({
     'contestants': contestants,
     'weakest_contestant': weakest_contestant,
-    #'weakest_contestant': 'Mike',
     'jeopardy_round': jeopardy_clues,
     'double_jeopardy_round': double_jeopardy_clues,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
@@ -122,6 +131,7 @@ def get_clue_url_map(clues_url):
     soup = BeautifulSoup(html_text, 'html.parser')
     clues = soup.find_all('td', {'class': 'clue'})
     clue_url_map = {}
+
     for clue_html in clues:
         clue_number_html = clue_html.find('td', {'class': 'clue_order_number'})
         try:
@@ -134,11 +144,12 @@ def get_clue_url_map(clues_url):
                 clue_url_map[clue_id] = anchor_html['href']               
         except:
             pass
+
     return clue_url_map
 
 def format_contestant_name(contestant):
     if ' ' in contestant:
-        return contestant.split()[-1];
+        return contestant.split()[-1];    
     return contestant
 
 def dollar_to_int(dollar):
@@ -258,6 +269,7 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'response': '',
         'daily_double_wager': ''
     }
+
     clue = jeopardy_board.to_dict('records')[difficulty_level][category_number][0].split()
     url = jeopardy_board.to_dict('records')[difficulty_level][category_number][1]  
     id_index = url.find('clue_id=')
@@ -268,15 +280,18 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
     clue_text = delimiter.join(clue[2:])
     category = jeopardy_board.to_dict('records')[0][category_number][0]
     category_note = ''
+
     if category.find('(') >= 0 and category.find(')') >= 0:
         start_index = category.find('(')
         end_index = category.find(')')
         category_note = category[start_index+1:end_index]
-        category = category[0:start_index] + category[end_index+1:]   
+        category = category[0:start_index] + category[end_index+1:]  
+
     response_string = jeopardy_responses.to_dict('records')[difficulty_level][category_number]
     response = response_string.split()[2:]
     clue_response = get_clue_response(response, response_string, contestants)
     daily_double_wager = 0
+    
     if clue_value == 'DD:':      
         daily_double_wager = int(clue_number.replace(',', '')[1:])
         clue_value = get_clue_value(difficulty_level, round)
