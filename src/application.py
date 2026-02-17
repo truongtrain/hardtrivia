@@ -308,7 +308,8 @@ def get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_respons
         'text': format_text(clue_text.upper()),
         'response': clue_response,
         'daily_double_wager': daily_double_wager,
-        'url': get_clue_url(clue_id, clue_url_map)
+        'url': get_clue_url(clue_id, clue_url_map),
+        'answered_contestants': []
     }
 
 def get_clue_url(clue_id, clue_url_map):
