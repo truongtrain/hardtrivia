@@ -100,6 +100,8 @@ def getGame(game_id):
     clue_url_map = get_clue_url_map(clues_url)
     jeopardy_round_selections = {contestants[0]: [1], contestants[1]: [], contestants[2]: []}
     double_jeopardy_round_selections = {contestants[0]: [], contestants[1]: [], contestants[2]: []}
+    jeopardy_contestants_by_clue_number = [''] * 30
+    double_jeopardy_contestants_by_clue_number = [''] * 30
 
     for category_number in range(0, 6):
         jeopardy_clues.append([])
@@ -110,17 +112,32 @@ def getGame(game_id):
             correct_contestant = clue['response']['correct_contestant']
             if correct_contestant:
                 jeopardy_round_selections[correct_contestant].append(clue['number']+1) 
+                jeopardy_contestants_by_clue_number[clue['number']-1] = correct_contestant
             if len(double_jeopardy_board) > 0:
                 clue = get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map)
                 double_jeopardy_clues[category_number].append(clue)
                 correct_contestant = clue['response']['correct_contestant']
                 if correct_contestant:
                     double_jeopardy_round_selections[clue['response']['correct_contestant']].append(clue['number']+1) 
+                    double_jeopardy_contestants_by_clue_number[clue['number']-1] = correct_contestant
     
+    # if a clue number is missing, assign it to the contestant who selected the previous clue
+    first_round_selections = jeopardy_round_selections[contestants[0]] + jeopardy_round_selections[contestants[1]] + jeopardy_round_selections[contestants[2]]
+    selecting_contestant = contestants[0]
+    for clue_number in range(2, 31):
+        if clue_number not in first_round_selections:
+            print(first_round_selections)
+            if jeopardy_contestants_by_clue_number[clue_number-1]:
+                selecting_contestant = jeopardy_contestants_by_clue_number[clue_number-1]
+            print(jeopardy_contestants_by_clue_number)
+            print(clue_number)
+            jeopardy_round_selections[selecting_contestant].append(clue_number)
+            jeopardy_contestants_by_clue_number[clue_number] = selecting_contestant
+
     for i in range(0, 3):
         jeopardy_round_selections[contestants[i]].sort()
         double_jeopardy_round_selections[contestants[i]].sort()
-        
+
     return jsonify({
     'contestants': contestants,
     'weakest_contestant': weakest_contestant,
