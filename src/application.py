@@ -90,8 +90,10 @@ def getGame(game_id):
         fj_correct_response = []
 
     coryats = responses_tables[-1]
+    jeopardy_round_scores = responses_tables[99]
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
     weakest_contestant = get_weakest_contestant(coryats, contestants)
+    jeopardy_round_weakest_contestant = get_weakest_contestant(jeopardy_round_scores, contestants)
     final_jeopardy_responses = responses_tables[-3]
     fj_correct_response = get_fj_correct_response(responses_url)
     # generate clue_json for each category_number and difficulty_level
@@ -100,6 +102,7 @@ def getGame(game_id):
     clue_url_map = get_clue_url_map(clues_url)
     jeopardy_round_selections = {contestants[0]: [1], contestants[1]: [], contestants[2]: []}
     double_jeopardy_round_selections = {contestants[0]: [], contestants[1]: [], contestants[2]: []}
+    double_jeopardy_round_selections[jeopardy_round_weakest_contestant].append(1)
     jeopardy_contestants_by_clue_number = [''] * 31
     double_jeopardy_contestants_by_clue_number = [''] * 31
 
@@ -117,10 +120,21 @@ def getGame(game_id):
                 clue = get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map)
                 double_jeopardy_clues[category_number].append(clue)
                 correct_contestant = clue['response']['correct_contestant']
-                if correct_contestant:
+                if correct_contestant and clue['number'] < 30:
                     double_jeopardy_round_selections[clue['response']['correct_contestant']].append(clue['number']+1) 
-                    double_jeopardy_contestants_by_clue_number[clue['number']-1] = correct_contestant
-    
+                    double_jeopardy_contestants_by_clue_number[clue['number']] = correct_contestant
+
+    return jsonify({
+    'contestants': contestants,
+    'weakest_contestant': weakest_contestant,
+    'jeopardy_round': jeopardy_clues,
+    'jeopardy_round_selections': get_jeopardy_round_selections(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections),
+    'double_jeopardy_round': double_jeopardy_clues,
+    'double_jeopardy_round_selections': get_double_jeopardy_round_selections(double_jeopardy_contestants_by_clue_number, jeopardy_round_weakest_contestant, double_jeopardy_round_selections, contestants),
+    'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
+    })
+
+def get_jeopardy_round_selections(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections):
     # if a clue number is missing, assign it to the contestant who selected the previous clue
     jeopardy_contestants_by_clue_number[0] = contestants[0]
     first_round_selections = jeopardy_round_selections[contestants[0]] + jeopardy_round_selections[contestants[1]] + jeopardy_round_selections[contestants[2]]
@@ -132,18 +146,23 @@ def getGame(game_id):
             jeopardy_contestants_by_clue_number[clue_number-1] = selecting_contestant
 
     for i in range(0, 3):
-        jeopardy_round_selections[contestants[i]].sort()
-        double_jeopardy_round_selections[contestants[i]].sort()
+        jeopardy_round_selections[contestants[i]].sort()     
+    return jeopardy_round_selections
 
-    return jsonify({
-    'contestants': contestants,
-    'weakest_contestant': weakest_contestant,
-    'jeopardy_round': jeopardy_clues,
-    'jeopardy_round_selections': jeopardy_round_selections,
-    'double_jeopardy_round': double_jeopardy_clues,
-    'double_jeopardy_round_selections': double_jeopardy_round_selections,
-    'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
-    })
+def get_double_jeopardy_round_selections(double_jeopardy_contestants_by_clue_number, jeopardy_round_weakest_contestant, double_jeopardy_round_selections, contestants):
+     # repeat for double jeopardy round, but start with the first round's weakest contestant
+    double_jeopardy_contestants_by_clue_number[0] = jeopardy_round_weakest_contestant
+    second_round_selections = double_jeopardy_round_selections[contestants[0]] + double_jeopardy_round_selections[contestants[1]] + double_jeopardy_round_selections[contestants[2]]
+    selecting_contestant = jeopardy_round_weakest_contestant
+    for clue_number in range(2, 30):
+        if clue_number not in second_round_selections:
+            selecting_contestant = double_jeopardy_contestants_by_clue_number[clue_number-2]
+            double_jeopardy_round_selections[selecting_contestant].append(clue_number)
+            double_jeopardy_contestants_by_clue_number[clue_number-1] = selecting_contestant
+
+    for i in range(0, 3):
+        double_jeopardy_round_selections[contestants[i]].sort()
+    return double_jeopardy_round_selections
 
 def get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response):
     if len(final_jeopardy_category) == 0:
