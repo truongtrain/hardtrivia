@@ -105,6 +105,8 @@ def getGame(game_id):
     double_jeopardy_round_selections[jeopardy_round_weakest_contestant].append(1)
     jeopardy_contestants_by_clue_number = [''] * 31
     double_jeopardy_contestants_by_clue_number = [''] * 31
+    jeopardy_clue_number_to_coordinates = [[]] * 31
+    double_jeopardy_clue_number_to_coordinates = [[]] * 31
 
     for category_number in range(0, 6):
         jeopardy_clues.append([])
@@ -112,12 +114,14 @@ def getGame(game_id):
         for difficulty_level in range(1, 6):
             clue = get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, 1, contestants, clue_url_map)
             jeopardy_clues[category_number].append(clue)
+            jeopardy_clue_number_to_coordinates[clue['number']] = [difficulty_level-1, category_number]
             correct_contestant = clue['response']['correct_contestant']
             if correct_contestant and clue['number'] < 30:
                 jeopardy_round_selections[correct_contestant].append(clue['number']+1) 
                 jeopardy_contestants_by_clue_number[clue['number']] = correct_contestant
             if len(double_jeopardy_board) > 0:
                 clue = get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map)
+                double_jeopardy_clue_number_to_coordinates[clue['number']] = [difficulty_level-1, category_number]
                 double_jeopardy_clues[category_number].append(clue)
                 correct_contestant = clue['response']['correct_contestant']
                 if correct_contestant and clue['number'] < 30:
@@ -129,8 +133,10 @@ def getGame(game_id):
     'weakest_contestant': weakest_contestant,
     'jeopardy_round': jeopardy_clues,
     'jeopardy_round_selections': get_jeopardy_round_selections(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections),
+    'jeopardy_clue_number_to_coordinates': jeopardy_clue_number_to_coordinates,
     'double_jeopardy_round': double_jeopardy_clues,
     'double_jeopardy_round_selections': get_double_jeopardy_round_selections(double_jeopardy_contestants_by_clue_number, jeopardy_round_weakest_contestant, double_jeopardy_round_selections, contestants),
+    'double_jeopardy_clue_number_to_coordinates': double_jeopardy_clue_number_to_coordinates,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
     })
 
