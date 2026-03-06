@@ -103,10 +103,11 @@ def getGame(game_id):
     jeopardy_round_selections = {contestants[0]: [1], contestants[1]: [], contestants[2]: []}
     double_jeopardy_round_selections = {contestants[0]: [], contestants[1]: [], contestants[2]: []}
     double_jeopardy_round_selections[jeopardy_round_weakest_contestant].append(1)
-    jeopardy_contestants_by_clue_number = [''] * 31
-    double_jeopardy_contestants_by_clue_number = [''] * 31
-    jeopardy_clue_number_to_coordinates = [[]] * 31
-    double_jeopardy_clue_number_to_coordinates = [[]] * 31
+    num_clues = 31
+    jeopardy_contestants_by_clue_number = [''] * num_clues
+    double_jeopardy_contestants_by_clue_number = [''] * num_clues
+    jeopardy_clue_number_to_coordinates = [{} for _ in range(num_clues)]
+    double_jeopardy_clue_number_to_coordinates = [{} for _ in range(num_clues)]
 
     for category_number in range(0, 6):
         jeopardy_clues.append([])
@@ -114,14 +115,14 @@ def getGame(game_id):
         for difficulty_level in range(1, 6):
             clue = get_clue(category_number, difficulty_level, jeopardy_board, jeopardy_responses, 1, contestants, clue_url_map)
             jeopardy_clues[category_number].append(clue)
-            jeopardy_clue_number_to_coordinates[clue['number']] = [difficulty_level-1, category_number]
+            jeopardy_clue_number_to_coordinates[clue['number']] = {'row': difficulty_level-1, 'col': category_number}
             correct_contestant = clue['response']['correct_contestant']
             if correct_contestant and clue['number'] < 30:
                 jeopardy_round_selections[correct_contestant].append(clue['number']+1) 
                 jeopardy_contestants_by_clue_number[clue['number']] = correct_contestant
             if len(double_jeopardy_board) > 0:
                 clue = get_clue(category_number, difficulty_level, double_jeopardy_board, double_jeopardy_responses, 2, contestants, clue_url_map)
-                double_jeopardy_clue_number_to_coordinates[clue['number']] = [difficulty_level-1, category_number]
+                double_jeopardy_clue_number_to_coordinates[clue['number']] = {'row': difficulty_level-1, 'col': category_number}
                 double_jeopardy_clues[category_number].append(clue)
                 correct_contestant = clue['response']['correct_contestant']
                 if correct_contestant and clue['number'] < 30:
