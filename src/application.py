@@ -3,10 +3,10 @@ import json
 import pandas as panda
 import ssl 
 import requests
+import time
 from bs4 import BeautifulSoup
 from flask import jsonify
 from flask_cors import CORS, cross_origin
-import time
 
 app = flask.Flask("trivia")
 CORS(app)
@@ -129,47 +129,115 @@ def getGame(game_id):
                     double_jeopardy_round_selections[clue['response']['correct_contestant']].append(clue['number']+1) 
                     double_jeopardy_contestants_by_clue_number[clue['number']] = correct_contestant
 
+    jeopardy_round_picks = get_picks(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections, contestants[0], jeopardy_clue_number_to_coordinates)
+    double_jeopardy_round_picks = get_picks(double_jeopardy_contestants_by_clue_number, contestants, double_jeopardy_round_selections, jeopardy_round_weakest_contestant, double_jeopardy_clue_number_to_coordinates)
+    
     return jsonify({
     'contestants': contestants,
     'weakest_contestant': weakest_contestant,
     'jeopardy_round': jeopardy_clues,
-    'jeopardy_round_selections': get_jeopardy_round_selections(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections),
+    'jeopardy_round_picks': jeopardy_round_picks,
     'jeopardy_clue_number_to_coordinates': jeopardy_clue_number_to_coordinates,
     'double_jeopardy_round': double_jeopardy_clues,
-    'double_jeopardy_round_selections': get_double_jeopardy_round_selections(double_jeopardy_contestants_by_clue_number, jeopardy_round_weakest_contestant, double_jeopardy_round_selections, contestants),
+    'double_jeopardy_round_picks': double_jeopardy_round_picks,
     'double_jeopardy_clue_number_to_coordinates': double_jeopardy_clue_number_to_coordinates,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
     })
 
-def get_jeopardy_round_selections(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections):
+def get_picks(contestants_by_clue_number, contestants, selections, starting_contestant, clue_number_to_coordinates):
     # if a clue number is missing, assign it to the contestant who selected the previous clue
-    jeopardy_contestants_by_clue_number[0] = contestants[0]
-    first_round_selections = jeopardy_round_selections[contestants[0]] + jeopardy_round_selections[contestants[1]] + jeopardy_round_selections[contestants[2]]
-    selecting_contestant = contestants[0]
+    contestants_by_clue_number[0] = starting_contestant
+    all_selections = selections[contestants[0]] + selections[contestants[1]] + selections[contestants[2]]
+    selecting_contestant = starting_contestant
+
     for clue_number in range(2, 30):
-        if clue_number not in first_round_selections:
-            selecting_contestant = jeopardy_contestants_by_clue_number[clue_number-2]
-            jeopardy_round_selections[selecting_contestant].append(clue_number)
-            jeopardy_contestants_by_clue_number[clue_number-1] = selecting_contestant
+        if clue_number not in all_selections:
+            selecting_contestant = contestants_by_clue_number[clue_number-2]
+            selections[selecting_contestant].append(clue_number)
+            contestants_by_clue_number[clue_number-1] = selecting_contestant
+  
+    picks = {}
+    for contestant in contestants:
+        selections[contestant].sort()   
+        picks[contestant] = []
+        for selection in selections[contestant]:
+            coord = clue_number_to_coordinates[selection]
+            picks[contestant].append(coord)
 
-    for i in range(0, 3):
-        jeopardy_round_selections[contestants[i]].sort()     
-    return jeopardy_round_selections
+    return picks
 
-def get_double_jeopardy_round_selections(double_jeopardy_contestants_by_clue_number, jeopardy_round_weakest_contestant, double_jeopardy_round_selections, contestants):
-     # repeat for double jeopardy round, but start with the first round's weakest contestant
-    double_jeopardy_contestants_by_clue_number[0] = jeopardy_round_weakest_contestant
-    second_round_selections = double_jeopardy_round_selections[contestants[0]] + double_jeopardy_round_selections[contestants[1]] + double_jeopardy_round_selections[contestants[2]]
-    selecting_contestant = jeopardy_round_weakest_contestant
-    for clue_number in range(2, 30):
-        if clue_number not in second_round_selections:
-            selecting_contestant = double_jeopardy_contestants_by_clue_number[clue_number-2]
-            double_jeopardy_round_selections[selecting_contestant].append(clue_number)
-            double_jeopardy_contestants_by_clue_number[clue_number-1] = selecting_contestant
+def build_frequency_matrix(picks, rows=5, cols=6):  # track how often a contestant chooses each coordinate
+    matrix = [[0 for _ in range(cols)] for _ in range(rows)]
 
-    for i in range(0, 3):
-        double_jeopardy_round_selections[contestants[i]].sort()
-    return double_jeopardy_round_selections
+    for pick in picks:
+        matrix[pick["row"]][pick["col"]] += 1
+
+    return matrix
+
+
+def build_transition_matrix(picks):  # track what clue tends to follow another clue
+    transitions = {}
+
+    for i in range(len(picks) - 1):
+        from_key = f"{picks[i]['row']},{picks[i]['col']}"
+        to_key = f"{picks[i + 1]['row']},{picks[i + 1]['col']}"
+
+        if from_key not in transitions:
+            transitions[from_key] = {}
+
+        transitions[from_key][to_key] = transitions[from_key].get(to_key, 0) + 1
+
+    return transitions
+
+def derive_profile_from_history(picks):
+
+    if not picks or len(picks) < 2:
+        return {
+            "sameCategoryWeight": 2.0,
+            "continueDownWeight": 2.0,
+            "bottomRowWeight": 2.0,
+            "jumpCategoryWeight": 1.0,
+            "dailyDoubleHuntWeight": 1.5,
+            "historicalWeight": 1.5,
+            "transitionWeight": 1.5,
+            "randomness": 0.2
+        }
+
+    same_category_count = 0
+    continue_down_count = 0
+    jump_count = 0
+    total_row = 0
+
+    for i in range(len(picks)):
+
+        total_row += picks[i]["row"]
+
+        if i > 0:
+            prev = picks[i - 1]
+            curr = picks[i]
+
+            if curr["col"] == prev["col"]:
+                same_category_count += 1
+
+            if curr["col"] == prev["col"] and curr["row"] == prev["row"] + 1:
+                continue_down_count += 1
+
+            if curr["col"] != prev["col"]:
+                jump_count += 1
+
+    transitions = len(picks) - 1
+    avg_row = total_row / len(picks)
+
+    return {
+        "sameCategoryWeight": 1 + (same_category_count / max(transitions, 1)) * 4,
+        "continueDownWeight": 1 + (continue_down_count / max(transitions, 1)) * 4,
+        "bottomRowWeight": 1 + (avg_row / 4) * 3,
+        "jumpCategoryWeight": 0.5 + (jump_count / max(transitions, 1)) * 3,
+        "dailyDoubleHuntWeight": 1 + (avg_row / 4) * 2,
+        "historicalWeight": 2.0,
+        "transitionWeight": 2.0,
+        "randomness": 0.2
+    }
 
 def get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response):
     if len(final_jeopardy_category) == 0:
