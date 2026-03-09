@@ -138,10 +138,12 @@ def getGame(game_id):
     'jeopardy_round': jeopardy_clues,
     'jeopardy_round_picks': jeopardy_round_picks,
     'jeopardy_round_frequency_matrix': build_frequency_matrix(jeopardy_round_picks, contestants),
+    'jeopardy_round_transition_matrix': build_transition_matrix(jeopardy_round_picks, contestants),
     'jeopardy_clue_number_to_coordinates': jeopardy_clue_number_to_coordinates,
     'double_jeopardy_round': double_jeopardy_clues,
     'double_jeopardy_round_picks': double_jeopardy_round_picks,
     'double_jeopardy_round_frequency_matrix': build_frequency_matrix(double_jeopardy_round_picks, contestants),
+    'double_jeopardy_round_transition_matrix': build_transition_matrix(double_jeopardy_round_picks, contestants),
     'double_jeopardy_clue_number_to_coordinates': double_jeopardy_clue_number_to_coordinates,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
     })
@@ -178,17 +180,18 @@ def build_frequency_matrix(picks, contestants, rows=5, cols=6):  # track how oft
     return matrices
 
 
-def build_transition_matrix(picks):  # track what clue tends to follow another clue
+def build_transition_matrix(picks, contestants):  # track what clue tends to follow another clue
     transitions = {}
+    for contestant in contestants:
+        transitions[contestant] = {}
+        for i in range(len(picks[contestant]) - 1):
+            from_key = f"{picks[contestant][i]['row']},{picks[contestant][i]['col']}"
+            to_key = f"{picks[contestant][i + 1]['row']},{picks[contestant][i + 1]['col']}"
 
-    for i in range(len(picks) - 1):
-        from_key = f"{picks[i]['row']},{picks[i]['col']}"
-        to_key = f"{picks[i + 1]['row']},{picks[i + 1]['col']}"
+            if from_key not in transitions[contestant]:
+                transitions[contestant][from_key] = {}
 
-        if from_key not in transitions:
-            transitions[from_key] = {}
-
-        transitions[from_key][to_key] = transitions[from_key].get(to_key, 0) + 1
+            transitions[contestant][from_key][to_key] = transitions[contestant][from_key].get(to_key, 0) + 1
 
     return transitions
 
