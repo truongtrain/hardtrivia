@@ -137,9 +137,11 @@ def getGame(game_id):
     'weakest_contestant': weakest_contestant,
     'jeopardy_round': jeopardy_clues,
     'jeopardy_round_picks': jeopardy_round_picks,
+    'jeopardy_round_frequency_matrix': build_frequency_matrix(jeopardy_round_picks, contestants),
     'jeopardy_clue_number_to_coordinates': jeopardy_clue_number_to_coordinates,
     'double_jeopardy_round': double_jeopardy_clues,
     'double_jeopardy_round_picks': double_jeopardy_round_picks,
+    'double_jeopardy_round_frequency_matrix': build_frequency_matrix(double_jeopardy_round_picks, contestants),
     'double_jeopardy_clue_number_to_coordinates': double_jeopardy_clue_number_to_coordinates,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
     })
@@ -166,13 +168,14 @@ def get_picks(contestants_by_clue_number, contestants, selections, starting_cont
 
     return picks
 
-def build_frequency_matrix(picks, rows=5, cols=6):  # track how often a contestant chooses each coordinate
-    matrix = [[0 for _ in range(cols)] for _ in range(rows)]
+def build_frequency_matrix(picks, contestants, rows=5, cols=6):  # track how often a contestant chooses each coordinate
+    matrices = {}
+    for contestant in contestants:
+        matrices[contestant] = [[0 for _ in range(cols)] for _ in range(rows)]
+        for pick in picks[contestant]:
+            matrices[contestant][pick["row"]][pick["col"]] += 1
 
-    for pick in picks:
-        matrix[pick["row"]][pick["col"]] += 1
-
-    return matrix
+    return matrices
 
 
 def build_transition_matrix(picks):  # track what clue tends to follow another clue
