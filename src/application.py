@@ -139,11 +139,13 @@ def getGame(game_id):
     'jeopardy_round_picks': jeopardy_round_picks,
     'jeopardy_round_frequency_matrix': build_frequency_matrix(jeopardy_round_picks, contestants),
     'jeopardy_round_transition_matrix': build_transition_matrix(jeopardy_round_picks, contestants),
+    'jeopardy_round_player_profiles': derive_player_profiles(jeopardy_round_picks, contestants),
     'jeopardy_clue_number_to_coordinates': jeopardy_clue_number_to_coordinates,
     'double_jeopardy_round': double_jeopardy_clues,
     'double_jeopardy_round_picks': double_jeopardy_round_picks,
     'double_jeopardy_round_frequency_matrix': build_frequency_matrix(double_jeopardy_round_picks, contestants),
     'double_jeopardy_round_transition_matrix': build_transition_matrix(double_jeopardy_round_picks, contestants),
+    'double_jeopardy_round_player_profiles': derive_player_profiles(double_jeopardy_round_picks, contestants),
     'double_jeopardy_clue_number_to_coordinates': double_jeopardy_clue_number_to_coordinates,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
     })
@@ -195,6 +197,12 @@ def build_transition_matrix(picks, contestants):  # track what clue tends to fol
 
     return transitions
 
+def derive_player_profiles(picks, contestants):
+    profiles = {}
+    for contestant in contestants:
+        profiles[contestant] = derive_profile_from_history(picks[contestant])
+    return profiles
+
 def derive_profile_from_history(picks):
 
     if not picks or len(picks) < 2:
@@ -215,7 +223,6 @@ def derive_profile_from_history(picks):
     total_row = 0
 
     for i in range(len(picks)):
-
         total_row += picks[i]["row"]
 
         if i > 0:
