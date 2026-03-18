@@ -92,6 +92,7 @@ def getGame(game_id):
     coryats = responses_tables[-1]
     jeopardy_round_scores = responses_tables[99]
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
+    accuracies = {contestants[0]: get_accuracy(coryats[0][2]), contestants[1]: get_accuracy(coryats[1][2]), contestants[2]: get_accuracy(coryats[2][2])}
     weakest_contestant = get_weakest_contestant(coryats, contestants)
     jeopardy_round_weakest_contestant = get_weakest_contestant(jeopardy_round_scores, contestants)
     final_jeopardy_responses = responses_tables[-3]
@@ -139,16 +140,22 @@ def getGame(game_id):
     'jeopardy_round_picks': jeopardy_round_picks,
     'jeopardy_round_frequency_matrix': build_frequency_matrix(jeopardy_round_picks, contestants),
     'jeopardy_round_transition_matrix': build_transition_matrix(jeopardy_round_picks, contestants),
-    'jeopardy_round_player_profiles': derive_player_profiles(jeopardy_round_picks, contestants),
+    'jeopardy_round_player_profiles': derive_player_profiles(jeopardy_round_picks, contestants, accuracies),
     'jeopardy_clue_number_to_coordinates': jeopardy_clue_number_to_coordinates,
     'double_jeopardy_round': double_jeopardy_clues,
     'double_jeopardy_round_picks': double_jeopardy_round_picks,
     'double_jeopardy_round_frequency_matrix': build_frequency_matrix(double_jeopardy_round_picks, contestants),
     'double_jeopardy_round_transition_matrix': build_transition_matrix(double_jeopardy_round_picks, contestants),
-    'double_jeopardy_round_player_profiles': derive_player_profiles(double_jeopardy_round_picks, contestants),
+    'double_jeopardy_round_player_profiles': derive_player_profiles(double_jeopardy_round_picks, contestants, accuracies),
     'double_jeopardy_clue_number_to_coordinates': double_jeopardy_clue_number_to_coordinates,
     'final_jeopardy': get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response)
     })
+
+def get_accuracy(accuracy_str):
+    text_list = accuracy_str.split()
+    correct = text_list[0]
+    wrong = text_list[len(text_list)-2]
+    return int(correct) / (int(correct) + int(wrong))
 
 def get_picks(contestants_by_clue_number, contestants, selections, starting_contestant, clue_number_to_coordinates):
     # if a clue number is missing, assign it to the contestant who selected the previous clue
@@ -197,13 +204,13 @@ def build_transition_matrix(picks, contestants):  # track what clue tends to fol
 
     return transitions
 
-def derive_player_profiles(picks, contestants):
+def derive_player_profiles(picks, contestants, accuracies):
     profiles = {}
     for contestant in contestants:
-        profiles[contestant] = derive_profile_from_history(picks[contestant])
+        profiles[contestant] = derive_profile_from_history(picks[contestant], accuracies[contestant])
     return profiles
 
-def derive_profile_from_history(picks):
+def derive_profile_from_history(picks, accuracy):
 
     if not picks or len(picks) < 2:
         return {
@@ -214,7 +221,8 @@ def derive_profile_from_history(picks):
             "dailyDoubleHuntWeight": 1.5,
             "historicalWeight": 1.5,
             "transitionWeight": 1.5,
-            "randomness": 0.2
+            "randomness": 0.2,
+            "accuracy": accuracy
         }
 
     same_category_count = 0
@@ -249,7 +257,8 @@ def derive_profile_from_history(picks):
         "dailyDoubleHuntWeight": 1 + (avg_row / 4) * 2,
         "historicalWeight": 2.0,
         "transitionWeight": 2.0,
-        "randomness": 0.2
+        "randomness": 0.2,
+        "accuracy": accuracy
     }
 
 def get_final_jeopardy(final_jeopardy_category, final_jeopardy_clue, final_jeopardy_responses, fj_correct_response):
