@@ -94,7 +94,6 @@ def getGame(game_id):
     contestants = [format_contestant_name(coryats.to_dict('records')[0][0]), format_contestant_name(coryats.to_dict('records')[0][1]), format_contestant_name(coryats.to_dict('records')[0][2])]
     accuracies = {contestants[0]: get_accuracy(coryats[0][2]), contestants[1]: get_accuracy(coryats[1][2]), contestants[2]: get_accuracy(coryats[2][2])}
     weakest_contestant = get_weakest_contestant(coryats, contestants)
-    jeopardy_round_weakest_contestant = get_weakest_contestant(jeopardy_round_scores, contestants)
     final_jeopardy_responses = responses_tables[-3]
     fj_correct_response = get_fj_correct_response(responses_url)
     # generate clue_json for each category_number and difficulty_level
@@ -103,7 +102,7 @@ def getGame(game_id):
     clue_url_map = get_clue_url_map(clues_url)
     jeopardy_round_selections = {contestants[0]: [1], contestants[1]: [], contestants[2]: []}
     double_jeopardy_round_selections = {contestants[0]: [], contestants[1]: [], contestants[2]: []}
-    double_jeopardy_round_selections[jeopardy_round_weakest_contestant].append(1)
+    double_jeopardy_round_selections[weakest_contestant].append(1)
     num_clues = 31
     jeopardy_contestants_by_clue_number = [''] * num_clues
     double_jeopardy_contestants_by_clue_number = [''] * num_clues
@@ -131,7 +130,7 @@ def getGame(game_id):
                     double_jeopardy_contestants_by_clue_number[clue['number']] = correct_contestant
 
     jeopardy_round_picks = get_picks(jeopardy_contestants_by_clue_number, contestants, jeopardy_round_selections, contestants[0], jeopardy_clue_number_to_coordinates)
-    double_jeopardy_round_picks = get_picks(double_jeopardy_contestants_by_clue_number, contestants, double_jeopardy_round_selections, jeopardy_round_weakest_contestant, double_jeopardy_clue_number_to_coordinates)
+    double_jeopardy_round_picks = get_picks(double_jeopardy_contestants_by_clue_number, contestants, double_jeopardy_round_selections, weakest_contestant, double_jeopardy_clue_number_to_coordinates)
     
     return jsonify({
     'contestants': contestants,
